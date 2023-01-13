@@ -143,6 +143,7 @@ class VectorSettingsLabsFragment :
 
     private fun configureMultiChatPreference() {
         findPreference<VectorSwitchPreference>(VectorPreferences.SETTINGS_LABS_ENABLE_MULTICHAT)?.let { pref ->
+            pref.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
             pref.isEnabled = vectorPreferences.isTabletModeEnabled()
         }
     }
