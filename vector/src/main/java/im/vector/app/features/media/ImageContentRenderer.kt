@@ -117,6 +117,7 @@ class ImageContentRenderer @Inject constructor(
         */
         GlideApp.with(imageView)
                 .load(imageUrl)
+                .fitCenter()
                 .listener(object: RequestListener<Drawable> {
                     override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
                         Timber.e("Rendering url $imageUrl failed: $e")
