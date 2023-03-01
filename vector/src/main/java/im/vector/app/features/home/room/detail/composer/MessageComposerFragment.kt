@@ -213,6 +213,11 @@ class MessageComposerFragment : VectorBaseFragment<FragmentComposerBinding>(), A
             }
         }
 
+        // Initial send button color
+        withState(messageComposerViewModel) {
+            handleSendButtonVisibilityChanged(MessageComposerViewEvents.AnimateSendButtonVisibility(it.isSendButtonVisible, it.isSendButtonActive))
+        }
+
         messageComposerViewModel.onEach(MessageComposerViewState::sendMode, MessageComposerViewState::canSendMessage) { mode, canSend ->
             if (!canSend.boolean()) {
                 return@onEach

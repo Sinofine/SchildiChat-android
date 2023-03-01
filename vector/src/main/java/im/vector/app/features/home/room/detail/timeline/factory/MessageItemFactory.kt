@@ -166,8 +166,8 @@ class MessageItemFactory @Inject constructor(
         textRendererFactory.create(roomId)
     }
 
-    private val useRichTextEditorStyle: Boolean get() =
-        vectorPreferences.isRichTextEditorEnabled()
+    private val useRichTextEditorStyle: Boolean
+        get() = vectorPreferences.isRichTextEditorEnabled()
 
     fun create(params: TimelineItemFactoryParams): VectorEpoxyModel<*>? {
         val event = params.event
@@ -265,12 +265,16 @@ class MessageItemFactory @Inject constructor(
             attributes: AbsMessageItem.Attributes,
             isEnded: Boolean,
     ): PollItem {
-        val pollViewState = pollItemViewStateFactory.create(pollContent, informationData)
+        val pollViewState = pollItemViewStateFactory.create(
+                pollContent = pollContent,
+                pollResponseData = informationData.pollResponseAggregatedSummary,
+                isSent = informationData.sendState.isSent(),
+        )
 
         return PollItem_()
                 .attributes(attributes)
                 .eventId(informationData.eventId)
-                .pollQuestion(createPollQuestion(informationData, pollViewState.question, callback))
+                .pollTitle(createPollQuestion(informationData, pollViewState.question, callback))
                 .canVote(pollViewState.canVote)
                 .votesStatus(pollViewState.votesStatus)
                 .optionViewStates(pollViewState.optionViewStates.orEmpty())
@@ -290,21 +294,37 @@ class MessageItemFactory @Inject constructor(
             highlight: Boolean,
             callback: TimelineEventController.Callback?,
             attributes: AbsMessageItem.Attributes,
-    ): PollItem? {
-        pollStartEventId ?: return null.also {
-            Timber.e("### buildEndedPollItem. Cannot render poll end event because poll start event id is null")
+    ): PollItem {
+        val pollStartEvent = if (pollStartEventId?.isNotEmpty() == true) {
+            session.roomService().getRoom(roomId)?.getTimelineEvent(pollStartEventId)
+        } else {
+            null
         }
-        val pollStartEvent = session.roomService().getRoom(roomId)?.getTimelineEvent(pollStartEventId)
-        val pollContent = pollStartEvent?.root?.getClearContent()?.toModel<MessagePollContent>() ?: return null
+        val pollContent = pollStartEvent?.root?.getClearContent()?.toModel<MessagePollContent>()
 
-        return buildPollItem(
-                pollContent,
-                informationData,
-                highlight,
-                callback,
-                attributes,
-                isEnded = true
-        )
+        return if (pollContent == null) {
+            val title = stringProvider.getString(R.string.message_reply_to_ended_poll_preview).toEpoxyCharSequence()
+            PollItem_()
+                    .attributes(attributes)
+                    .eventId(informationData.eventId)
+                    .pollTitle(title)
+                    .optionViewStates(emptyList())
+                    .edited(informationData.hasBeenEdited)
+                    .ended(true)
+                    .hasContent(false)
+                    .highlighted(highlight)
+                    .leftGuideline(avatarSizeProvider.leftGuideline)
+                    .callback(callback)
+        } else {
+            buildPollItem(
+                    pollContent,
+                    informationData,
+                    highlight,
+                    callback,
+                    attributes,
+                    isEnded = true,
+            )
+        }
     }
 
     private fun createPollQuestion(
@@ -511,7 +531,6 @@ class MessageItemFactory @Inject constructor(
                 highlight,
                 callback,
                 attributes,
-                useRichTextEditorStyle = vectorPreferences.isRichTextEditorEnabled(),
         )
     }
 
@@ -636,7 +655,7 @@ class MessageItemFactory @Inject constructor(
             val replyToContent = messageContent.relatesTo?.inReplyTo
             buildFormattedTextItem(matrixFormattedBody, informationData, highlight, callback, attributes, replyToContent)
         } else {
-            buildMessageTextItem(messageContent.body, false, informationData, highlight, callback, attributes, useRichTextEditorStyle)
+            buildMessageTextItem(messageContent.body, false, informationData, highlight, callback, attributes)
         }
     }
 
@@ -664,7 +683,6 @@ class MessageItemFactory @Inject constructor(
                 highlight,
                 callback,
                 attributes,
-                useRichTextEditorStyle,
                 pseudoEmojiBody,
         )
     }
@@ -676,7 +694,6 @@ class MessageItemFactory @Inject constructor(
             highlight: Boolean,
             callback: TimelineEventController.Callback?,
             attributes: AbsMessageItem.Attributes,
-            useRichTextEditorStyle: Boolean,
             emojiCheckCharSequence: CharSequence? = null,
     ): MessageTextItem? {
         val renderedBody = textRenderer.render(body)
