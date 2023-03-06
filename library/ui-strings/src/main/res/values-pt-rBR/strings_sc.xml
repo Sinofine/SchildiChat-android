@@ -108,4 +108,10 @@
     <string name="room_settings_default">Padrão</string>
     <string name="settings_enable_space_pager">Deslize a lista da conversa para trocar de campo</string>
     <string name="settings_enable_space_pager_summary">Permitir alternar entre os campos root, deslizando horizontalmente na lista da conversa</string>
+    <string name="bubble_rounded_corners_default">Padrão</string>
+    <string name="dev_tools_menu_redacted">Mensagens apagadas</string>
+    <string name="settings_hide_call_buttons">Esconder botões de ligação</string>
+    <string name="dev_tools_menu_new_layout">Novo layout</string>
+    <string name="home_layout_preferences_sort_unread">Não lido</string>
+    <string name="settings_labs_timeline">Linha do tempo</string>
 </resources>

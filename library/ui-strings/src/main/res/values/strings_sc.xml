@@ -188,6 +188,7 @@
     <string name="freeform_reaction_summary">Free-form reaction</string>
     <string name="custom_emotes_this_room">Room emojis</string>
     <string name="custom_emotes_other_room">Emojis from %1$s</string>
+    <string name="custom_emotes_named_other_room">\"%1$s\" from %2$s</string>
     <string name="custom_emotes_account_data">Own emojis</string>
     <string name="standard_emojis">Standard emojis</string>
 

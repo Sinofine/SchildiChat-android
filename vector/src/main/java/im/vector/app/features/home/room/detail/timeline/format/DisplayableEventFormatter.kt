@@ -42,7 +42,9 @@ import org.matrix.android.sdk.api.session.room.model.message.MessageContent
 import org.matrix.android.sdk.api.session.room.model.message.MessagePollContent
 import org.matrix.android.sdk.api.session.room.model.message.MessageTextContent
 import org.matrix.android.sdk.api.session.room.model.message.MessageType
+import org.matrix.android.sdk.api.session.room.model.message.MessageWithAttachmentContent
 import org.matrix.android.sdk.api.session.room.model.message.asMessageAudioEvent
+import org.matrix.android.sdk.api.session.room.model.message.getCaption
 import org.matrix.android.sdk.api.session.room.model.relation.ReactionContent
 import org.matrix.android.sdk.api.session.room.timeline.TimelineEvent
 import org.matrix.android.sdk.api.session.room.timeline.getTextDisplayableContent
@@ -94,7 +96,8 @@ class DisplayableEventFormatter @Inject constructor(
                             simpleFormat(senderName, stringProvider.getString(R.string.verification_request), appendAuthor)
                         }
                         MessageType.MSGTYPE_IMAGE -> {
-                            simpleFormat(senderName, stringProvider.getString(R.string.sent_an_image), appendAuthor)
+                            val text = (messageContent as? MessageWithAttachmentContent)?.getCaption() ?: stringProvider.getString(R.string.sent_an_image)
+                            simpleFormat(senderName, text, appendAuthor)
                         }
                         MessageType.MSGTYPE_AUDIO -> {
                             when {
@@ -110,10 +113,12 @@ class DisplayableEventFormatter @Inject constructor(
                             }
                         }
                         MessageType.MSGTYPE_VIDEO -> {
-                            simpleFormat(senderName, stringProvider.getString(R.string.sent_a_video), appendAuthor)
+                            val text = (messageContent as? MessageWithAttachmentContent)?.getCaption() ?: stringProvider.getString(R.string.sent_a_video)
+                            simpleFormat(senderName, text, appendAuthor)
                         }
                         MessageType.MSGTYPE_FILE -> {
-                            simpleFormat(senderName, stringProvider.getString(R.string.sent_a_file), appendAuthor)
+                            val text = (messageContent as? MessageWithAttachmentContent)?.getCaption() ?: stringProvider.getString(R.string.sent_a_file)
+                            simpleFormat(senderName, text, appendAuthor)
                         }
                         MessageType.MSGTYPE_LOCATION -> {
                             simpleFormat(senderName, stringProvider.getString(R.string.sent_location), appendAuthor)
@@ -215,7 +220,7 @@ class DisplayableEventFormatter @Inject constructor(
                             stringProvider.getString(R.string.verification_request)
                         }
                         MessageType.MSGTYPE_IMAGE -> {
-                            stringProvider.getString(R.string.sent_an_image)
+                            (messageContent as? MessageWithAttachmentContent)?.getCaption() ?: stringProvider.getString(R.string.sent_an_image)
                         }
                         MessageType.MSGTYPE_AUDIO -> {
                             if ((messageContent as? MessageAudioContent)?.voiceMessageIndicator != null) {
@@ -225,10 +230,10 @@ class DisplayableEventFormatter @Inject constructor(
                             }
                         }
                         MessageType.MSGTYPE_VIDEO -> {
-                            stringProvider.getString(R.string.sent_a_video)
+                            (messageContent as? MessageWithAttachmentContent)?.getCaption() ?: stringProvider.getString(R.string.sent_a_video)
                         }
                         MessageType.MSGTYPE_FILE -> {
-                            stringProvider.getString(R.string.sent_a_file)
+                            (messageContent as? MessageWithAttachmentContent)?.getCaption() ?: stringProvider.getString(R.string.sent_a_file)
                         }
                         MessageType.MSGTYPE_LOCATION -> {
                             stringProvider.getString(R.string.sent_location)

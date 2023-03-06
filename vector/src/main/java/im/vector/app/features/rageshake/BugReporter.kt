@@ -321,6 +321,8 @@ class BugReporter @Inject constructor(
                     // More Schildi-specific fields
                     val enabledDebugSettings = DbgUtil.ALL_PREFS.filter { DbgUtil.isDbgEnabled(it) }
                     builder.addFormDataPart("enabledDebugSettings", enabledDebugSettings.joinToString())
+                            .addFormDataPart("experimentalSettingsEnabled", vectorPreferences.getEnabledExperimentalSettings().joinToString())
+                            .addFormDataPart("experimentalSettingsDisabled", vectorPreferences.getDisabledExperimentalSettings().joinToString())
                             .addFormDataPart("reportTime", reportTime)
                             .addFormDataPart("packageName", buildMeta.applicationId)
                     // Device characteristics

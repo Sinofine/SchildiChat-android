@@ -346,6 +346,32 @@ class VectorPreferences @Inject constructor(
 
                 ShortcutsHandler.SHARED_PREF_KEY,
         )
+
+        // Pref keys to include in rageshake if enabled
+        val EXPERIMENTAL_PREF_IF_TRUE = arrayOf(
+                SETTINGS_LABS_RICH_TEXT_EDITOR_KEY,
+                SETTINGS_ENABLE_RICH_TEXT_FORMATTING_KEY,
+                SETTINGS_LABS_NEW_APP_LAYOUT_KEY,
+                SETTINGS_LABS_NEW_SESSION_MANAGER_KEY,
+                SETTINGS_LABS_DEFERRED_DM_KEY,
+        )
+        // Pref keys to include in rageshake if disabled
+        val EXPERIMENTAL_PREF_IF_FALSE = arrayOf(
+                SETTINGS_LABS_ENABLE_THREAD_MESSAGES,
+                SETTINGS_LABS_DEFERRED_DM_KEY,
+        )
+    }
+
+    // SC rageshake extras
+    fun getEnabledExperimentalSettings(): List<String> {
+        return EXPERIMENTAL_PREF_IF_TRUE.filter {
+            defaultPrefs.getBoolean(it, false)
+        }
+    }
+    fun getDisabledExperimentalSettings(): List<String> {
+        return EXPERIMENTAL_PREF_IF_FALSE.filterNot {
+            defaultPrefs.getBoolean(it, true)
+        }
     }
 
     /**

@@ -33,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
+import org.matrix.android.sdk.api.query.QueryStateEventValue
 import org.matrix.android.sdk.api.query.QueryStringValue
 import org.matrix.android.sdk.api.session.Session
 import org.matrix.android.sdk.api.session.accountdata.UserAccountDataTypes
@@ -91,7 +92,7 @@ class AutocompleteEmojiPresenter @AssistedInject constructor(
             }.toAutocompleteItems()
 
             // Custom emotes: This room's emotes
-            val currentRoomEmotes = room.getEmojiItems(query)
+            val currentRoomEmotes = room.getAllEmojiItems(query)
             val emoteData = currentRoomEmotes.toAutocompleteItems().let {
                 if (it.isNotEmpty()) {
                     listOf(AutocompleteEmojiDataItem.Header(roomId, context.getString(R.string.custom_emotes_this_room))) + it
@@ -109,10 +110,12 @@ class AutocompleteEmojiPresenter @AssistedInject constructor(
                         .limit(AutocompleteEmojiController.CUSTOM_ACCOUNT_MAX)
                 if (userPack.isNotEmpty()) {
                     emoteUrls.addAll(userPack.map { it.mxcUrl })
-                    emoteData += listOf(AutocompleteEmojiDataItem.Header(
-                            "de.spiritcroc.riotx.ACCOUNT_EMOJI_HEADER",
-                            context.getString(R.string.custom_emotes_account_data)
-                    ))
+                    emoteData += listOf(
+                            AutocompleteEmojiDataItem.Header(
+                                    "de.spiritcroc.riotx.ACCOUNT_EMOJI_HEADER",
+                                    context.getString(R.string.custom_emotes_account_data)
+                            )
+                    )
                     emoteData += userPack.toAutocompleteItems()
                 }
                 // Global emotes from rooms
@@ -120,7 +123,8 @@ class AutocompleteEmojiPresenter @AssistedInject constructor(
                 var packsAdded = 0
                 (globalPacks?.content?.get("rooms") as? Map<*, *>)?.forEach { pack ->
                     // If entry is empty, it has been disabled as global pack (after being enabled before).
-                    if ((pack.value as? Map<*, *>).isNullOrEmpty()) {
+                    val packsEnabled = pack.value as? Map<*, *>
+                    if (packsEnabled.isNullOrEmpty()) {
                         return@forEach
                     }
                     if (packsAdded >= AutocompleteEmojiController.MAX_CUSTOM_OTHER_ROOMS) {
@@ -129,20 +133,39 @@ class AutocompleteEmojiPresenter @AssistedInject constructor(
                     val packRoomId = pack.key
                     if (packRoomId is String && packRoomId != roomId) {
                         val packRoom = session.getRoom(packRoomId) ?: return@forEach
-                        // Filter out duplicate emotes with the exact same mxc url
-                        val packImages = packRoom.getEmojiItems(query).filter {
-                            it.mxcUrl !in emoteUrls
-                        }.limit(AutocompleteEmojiController.CUSTOM_OTHER_ROOM_MAX)
-                        // Add header + emotes
-                        if (packImages.isNotEmpty()) {
-                            packsAdded++
-                            emoteUrls.addAll(packImages.map { it.mxcUrl })
-                            emoteData += listOf(AutocompleteEmojiDataItem.Header(
-                                    packRoomId,
-                                    context.getString(R.string.custom_emotes_other_room,
-                                            packRoom.roomSummary()?.displayName ?: packRoomId)
-                            ))
-                            emoteData += packImages.toAutocompleteItems()
+                        packsEnabled.forEach roomPack@{ roomPack ->
+                            val packId = roomPack.key as? String ?: return@roomPack
+                            val emojiItems = packRoom.getEmojiItems(query, QueryStringValue.Equals(packId))
+                            val packName = emojiItems.first
+                            // Filter out duplicate emotes with the exact same mxc url
+                            val packImages = emojiItems.second.filter {
+                                it.mxcUrl !in emoteUrls
+                            }.limit(AutocompleteEmojiController.CUSTOM_OTHER_ROOM_MAX)
+                            // Add header + emotes
+                            if (packImages.isNotEmpty()) {
+                                packsAdded++
+                                emoteUrls.addAll(packImages.map { it.mxcUrl })
+                                val packRoomName = packRoom.roomSummary()?.displayName ?: packRoomId
+                                roomPack.value
+                                emoteData += listOf(
+                                        AutocompleteEmojiDataItem.Header(
+                                                packRoomId,
+                                                if (packName != null) {
+                                                    context.getString(
+                                                            R.string.custom_emotes_named_other_room,
+                                                            packName,
+                                                            packRoomName
+                                                    )
+                                                } else {
+                                                    context.getString(
+                                                            R.string.custom_emotes_other_room,
+                                                            packRoomName
+                                                    )
+                                                }
+                                        )
+                                )
+                                emoteData += packImages.toAutocompleteItems()
+                            }
                         }
                     }
                 }
@@ -161,8 +184,20 @@ class AutocompleteEmojiPresenter @AssistedInject constructor(
         return map { AutocompleteEmojiDataItem.Emoji(it) }
     }
 
-    private fun Room.getEmojiItems(query: CharSequence?): List<EmojiItem> {
-        return getStateEvent(EventType.ROOM_EMOTES, QueryStringValue.IsEmpty)?.content?.toModel<RoomEmoteContent>().getEmojiItems(query)
+    private fun Room.getEmojiItems(query: CharSequence?, queryStringValue: QueryStateEventValue): Pair<String?, List<EmojiItem>> {
+        val content = getStateEvent(EventType.ROOM_EMOTES, queryStringValue)?.content?.toModel<RoomEmoteContent>()
+        val packName = content?.pack?.displayName
+        return Pair(packName, content.getEmojiItems(query))
+    }
+
+    private fun Room.getAllEmojiItems(query: CharSequence?): List<EmojiItem> {
+        // NoCondition isn't allowed by matrix sdk for getStateEvents, so query both empty and non-empty
+        val eventTypeList = setOf(EventType.ROOM_EMOTES)
+        val emptyItems = stateService().getStateEvents(eventTypeList, QueryStringValue.IsEmpty)
+        val keyedItems = stateService().getStateEvents(eventTypeList, QueryStringValue.IsNotEmpty)
+        return (emptyItems + keyedItems).flatMap {
+            it.content?.toModel<RoomEmoteContent>().getEmojiItems(query)
+        }
     }
 
     private fun RoomEmoteContent?.getEmojiItems(query: CharSequence?): List<EmojiItem> {
