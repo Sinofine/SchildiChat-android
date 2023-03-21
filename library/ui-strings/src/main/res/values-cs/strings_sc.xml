@@ -174,4 +174,5 @@
     <string name="use_latest_app_sc">Použijte nejnovější verzi ${app_name_sc_stable} na ostatních zařízeních:</string>
     <string name="use_other_session_content_description_sc">Použijte nejnovější ${app_name_sc_stable} na svých dalších zařízeních, ${app_name_sc_stable} Web, ${app_name_sc_stable} Desktop, ${app_name_sc_stable} pro Android nebo jiném klientovi Matrix podporujícím křížové podepisování</string>
     <string name="settings_sc_dbg_show_duplicate_read_receipts">Duplicitní potvrzení o přečtení</string>
+    <string name="custom_emotes_named_other_room">\"%1$s\" z %2$s</string>
 </resources>

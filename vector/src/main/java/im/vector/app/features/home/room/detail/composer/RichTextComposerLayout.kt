@@ -36,6 +36,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.text.toSpannable
+import androidx.core.view.ViewCompat
 import androidx.core.view.isGone
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
@@ -48,6 +49,7 @@ import im.vector.app.core.utils.DimensionConverter
 import im.vector.app.databinding.ComposerRichTextLayoutBinding
 import im.vector.app.databinding.ViewRichTextMenuButtonBinding
 import im.vector.app.features.home.room.detail.TimelineViewModel
+import im.vector.app.features.home.room.detail.composer.images.UriContentListener
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
@@ -188,6 +190,16 @@ internal class RichTextComposerLayout @JvmOverloads constructor(
         )
         views.plainTextComposerEditText.addTextChangedListener(
                 TextChangeListener({ callback?.onTextChanged(it) }, { updateTextFieldBorder(isFullScreen) })
+        )
+        ViewCompat.setOnReceiveContentListener(
+                views.richTextComposerEditText,
+                arrayOf("image/*"),
+                UriContentListener { callback?.onRichContentSelected(it) }
+        )
+        ViewCompat.setOnReceiveContentListener(
+                views.plainTextComposerEditText,
+                arrayOf("image/*"),
+                UriContentListener { callback?.onRichContentSelected(it) }
         )
 
         disallowParentInterceptTouchEvent(views.richTextComposerEditText)

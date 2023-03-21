@@ -637,7 +637,7 @@ internal class LocalEchoEventFactory @Inject constructor(
                 permalink,
                 userLink,
                 userId,
-                bodyFormatted,
+                bodyFormatted.escapeRoomPings(),
                 finalReplyTextFormatted
         )
         //
@@ -726,7 +726,7 @@ internal class LocalEchoEventFactory @Inject constructor(
             append(originalSenderId)
             append(">")
 
-            val lines = body.text.split("\n")
+            val lines = body.text.escapeRoomPings().split("\n")
             lines.forEachIndexed { index, s ->
                 if (index == 0) {
                     append(" $s")
@@ -737,6 +737,11 @@ internal class LocalEchoEventFactory @Inject constructor(
             append("\n\n")
             append(newBodyText)
         }
+    }
+
+    private fun String.escapeRoomPings(): String {
+        // Escape @room, so replying as moderator will not ping the whole room
+        return replace("@room", "@\u2060room")
     }
 
     private fun bodyForReply(timelineEvent: TimelineEvent, isRedactedEvent: Boolean = false): TextContent {

@@ -34,6 +34,7 @@ Here you can find some extra features and changes compared to Element Android (w
 - Render image reactions
 - Send freeform reactions
 - Render media captions ([MSC2530](https://github.com/matrix-org/matrix-spec-proposals/pull/2530))
+- Escape @room in the reply fallback to avoid unintentional room pings when replying
 
 - Branding (name, app icon, links)
 - Show a toast instead of a snackbar after copying text, in order to not block the input area right after copying
